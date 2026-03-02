@@ -20,27 +20,30 @@ const COLORS = {
   window: '#4a9eff',
   chair: '#e8d4b8',
   nightstand: '#d4c5b0',
+  cabinetTable: '#e8ddd0',
 };
 
 const INITIAL_FURNITURE = [
   // WC boundary (the room walls) — fixed zone indicator
   { id: 'wcZone', type: 'zone', label: 'WC Zone', x: 0, y: 0, width: 2, height: 2, color: COLORS.wcWall, isZone: true, rotation: 0 },
   // WC sub-elements
-  { id: 'toilet', type: 'toilet', label: 'Bồn cầu', x: 0.6, y: 0, width: 0.4, height: 0.6, color: COLORS.toilet, zone: 'wc', rotation: 0 },
-  { id: 'sink', type: 'sink', label: 'Sink', x: 0, y: 0.8, width: 0.5, height: 0.4, color: COLORS.sink, zone: 'wc', rotation: 0 },
-  { id: 'shower', type: 'shower', label: 'Shower', x: 0, y: 1.2, width: 0.9, height: 0.8, color: COLORS.shower, zone: 'wc', rotation: 0 },
+  { id: 'toilet', type: 'toilet', label: 'Bồn cầu', x: 1.2, y: 0, width: 0.4, height: 0.6, color: COLORS.toilet, zone: 'wc', rotation: 0 },
+  { id: 'sink', type: 'sink', label: 'Sink', x: 0.75, y: 0.6, width: 0.5, height: 0.4, color: COLORS.sink, zone: 'wc', sinkMode: 'single', rotation: 0 },
+  { id: 'sink2', type: 'sink', label: 'Sink', x: 0.75, y: 1.2, width: 0.5, height: 0.4, color: COLORS.sink, zone: 'wc', sinkMode: 'single', rotation: 0 },
+  { id: 'shower', type: 'shower', label: 'Shower', x: 0, y: 0.4, width: 0.9, height: 1.2, color: COLORS.shower, zone: 'wc', rotation: 180 },
   // Bedroom furniture
-  { id: 'bed', type: 'bed', label: 'Bed S1', x: 2.5, y: 0.2, width: 2, height: 1.8, color: COLORS.bed, rotation: 0 },
+  { id: 'bed', type: 'bed', label: 'Bed S1', x: 3.3, y: 0, width: 2, height: 1.8, color: COLORS.bed, rotation: 0 },
   { id: 'workDesk', type: 'workStation', label: 'Work Station', x: 2.05, y: 0, width: 0.6, height: 2.0, color: COLORS.desk, rotation: 0 },
   { id: 'chair1', type: 'chair', label: 'Chair', x: 2.7, y: 0.3, width: 0.45, height: 0.45, color: COLORS.chair, rotation: 0 },
   { id: 'chair2', type: 'chair', label: 'Chair', x: 2.7, y: 1.2, width: 0.45, height: 0.45, color: COLORS.chair, rotation: 0 },
-  { id: 'nightstand', type: 'nightstand', label: 'Cabinet', x: 4.5, y: 0.5, width: 0.4, height: 0.4, color: COLORS.nightstand, rotation: 0 },
+  { id: 'nightstand', type: 'nightstand', label: 'Cabinet', x: 6.1, y: 0, width: 0.4, height: 0.4, color: COLORS.nightstand, rotation: 0 },
+  { id: 'cabinetTable', type: 'cabinetTable', label: 'Cabinet Table', x: 6.1, y: 0.5, width: 0.4, height: 1.3, color: COLORS.cabinetTable, rotation: 0 },
   { id: 'wardrobe', type: 'wardrobe', label: 'Wardrobe', x: 0, y: 3.4, width: 3, height: 0.6, color: COLORS.wardrobe, rotation: 0 },
   { id: 'tvDesk', type: 'tvDesk', label: 'TV Desk', x: 3.1, y: 3.4, width: 1.4, height: 0.6, color: COLORS.tvDesk, rotation: 0 },
   { id: 'vanity', type: 'vanity', label: 'Vanity Desk', x: 4.6, y: 3.4, width: 1.2, height: 0.6, color: COLORS.vanity, rotation: 0 },
-  // Door (left wall, 0.4m gap from wardrobe, opens inward)
-  { id: 'door', type: 'door', label: 'Door', x: 0, y: 2.1, width: 0.12, height: 0.9, color: COLORS.door, wallMounted: 'left', rotation: 0 },
-  { id: 'window', type: 'window', label: 'Window', x: 6.38, y: 0.5, width: 0.12, height: 2, color: COLORS.window, wallMounted: 'right', rotation: 0 },
+  // Door (left wall)
+  { id: 'door', type: 'door', label: 'Door', x: 0, y: 2.7, width: 0.12, height: 0.9, color: COLORS.door, wallMounted: 'left', rotation: 0 },
+  { id: 'window', type: 'window', label: 'Window', x: 6.38, y: 1.0, width: 0.12, height: 2, color: COLORS.window, wallMounted: 'right', rotation: 0 },
   // WC door (bathroom entrance from bedroom)
   { id: 'wcDoor', type: 'wcDoor', label: 'WC Door', x: 0.5, y: 1.88, width: 0.6, height: 0.12, color: COLORS.door, zone: 'wc', rotation: 0 },
 ];
@@ -126,6 +129,15 @@ function renderItemIcon(item, px, py, pw, ph) {
         <>
           <rect x={px + 2} y={py + 2} width={pw - 4} height={ph * 0.15} fill="#333" fillOpacity={0.4} rx={1} />
           <rect x={px + pw * 0.15} y={py + ph * 0.6} width={pw * 0.7} height={ph * 0.15} fill="#555" fillOpacity={0.3} rx={1} />
+        </>
+      );
+    case 'cabinetTable':
+      return (
+        <>
+          <rect x={px + 2} y={py + 2} width={pw - 4} height={ph - 4}
+            fill="white" fillOpacity={0.3} stroke="#b0a090" strokeWidth={0.5} rx={2} />
+          <line x1={px + pw * 0.3} y1={py + ph * 0.5} x2={px + pw * 0.7} y2={py + ph * 0.5}
+            stroke="#a09080" strokeWidth={0.8} />
         </>
       );
     default:
@@ -423,6 +435,17 @@ export default function FloorPlanEditor({ furniture, setFurniture, onGenerate })
               title="Rotate right 15°">
               ↻
             </button>
+            {selectedItem.type === 'sink' && (
+              <button onClick={() => {
+                setFurniture((prev) => prev.map((f) => f.id !== selectedId ? f : {
+                  ...f, sinkMode: f.sinkMode === 'double' ? 'single' : 'double'
+                }));
+              }}
+                className="px-3 py-1 text-sm bg-[#d8eef8] hover:bg-[#c0dde8] text-[#4a3f35] rounded-md border border-[#a8c8d8] transition cursor-pointer"
+                title="Toggle single/double sink">
+                {selectedItem.sinkMode === 'double' ? '⬜ Single Sink' : '⬜⬜ Double Sink'}
+              </button>
+            )}
             {!selectedItem.isZone && !['door', 'window', 'wcDoor', 'zone'].includes(selectedItem.type) && (
               <button onClick={() => duplicateItem(selectedId)}
                 className="px-3 py-1 text-sm bg-[#f5f0eb] hover:bg-[#e8ddd2] text-[#4a3f35] rounded-md border border-[#d4c5b0] transition cursor-pointer"

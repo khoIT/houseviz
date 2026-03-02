@@ -50,6 +50,21 @@ Refer to the workflow.md for most effective working style.
 - [x] Type field on all items + refactored 3D to generic TYPE_TO_COMPONENT loop
 - [x] Removed old ID-based 3D rendering in favor of generic loop
 
+### Prompt 5: Layout update, sink config, orientations, window glass, hole fix
+- [x] Update INITIAL_FURNITURE positions to match Image 1 (toilet→top-right, 2 sinks, shower→top-left, bed→center, cabinet+cabinetTable→right)
+- [x] Sink: configurable double/single toggle, 3D vanity cabinet underneath + long mirror
+- [x] Shower rotation=180 (facing south), toilet rotation=0 (already faces south)
+- [x] WorkStation3D: laptop moved next to monitor, both screens face outward (+z)
+- [x] Right side: CabinetTable3D replaces old work station (desk+cabinet+lamp+decor)
+- [x] Window 3D: meshPhysicalMaterial with transmission=0.95, opacity=0.08 for see-through glass
+- [x] Fix hole: WallPanel hole clamping + window repositioned to y=1.0 (centered on wall)
+- [x] Test and verify all changes
+
+### Prompt 6: Right wall gap fix, window glass toggle, Netlify deploy
+- [x] Fix right wall empty space: holeX formula was giving hole CENTER instead of LEFT EDGE (also fixed left/front walls)
+- [x] Window: two glass panes with open/close toggle animation (click to swing open like doors)
+- [x] Created netlify.toml (build cmd: npm run build, publish: dist, SPA redirect)
+
 ## Style Reference
 - Cream/beige walls with panel molding
 - Warm oak wood flooring

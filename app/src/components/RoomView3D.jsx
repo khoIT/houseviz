@@ -32,8 +32,13 @@ const PALETTE = {
 };
 
 // =================== WALLS ===================
-function WallPanel({ position, rotation, width, height, hasHole, holeX, holeW, holeH, holeY0 }) {
+function WallPanel({ position, rotation, width, height, hasHole, holeX: rawHoleX, holeW: rawHoleW, holeH, holeY0 }) {
   if (hasHole) {
+    // Clamp hole to wall bounds to prevent overflow
+    const holeLeft = Math.max(-width / 2, rawHoleX);
+    const holeRight = Math.min(width / 2, rawHoleX + rawHoleW);
+    const holeX = holeLeft;
+    const holeW = holeRight - holeLeft;
     return (
       <group position={position} rotation={rotation}>
         {/* Wall segments around the hole */}
@@ -258,17 +263,17 @@ function WorkStation3D({ position, width = 0.6, depth = 2, height = 0.75 }) {
       <RoundedBox args={[0.18, 0.4, 0.4]} position={[-width/2 + 0.12, 0.2, -depth * 0.3]} radius={0.01} smoothness={2}>
         <meshStandardMaterial color="#2a2a2a" roughness={0.4} />
       </RoundedBox>
-      {/* Laptop near bathroom end */}
-      <group position={[0, height, depth * 0.25]}>
+      {/* Laptop next to monitor, also back to wall, screen faces out */}
+      <group position={[width * 0.25, height, -depth * 0.15]}>
         <mesh position={[0, 0.01, 0]}>
           <boxGeometry args={[0.3, 0.01, 0.22]} />
           <meshStandardMaterial color="#555" roughness={0.3} />
         </mesh>
-        <mesh position={[0, 0.1, -0.1]} rotation={[-0.3, 0, 0]}>
+        <mesh position={[0, 0.1, 0.1]} rotation={[0.3, 0, 0]}>
           <boxGeometry args={[0.3, 0.2, 0.005]} />
           <meshStandardMaterial color="#444" roughness={0.3} />
         </mesh>
-        <mesh position={[0, 0.1, -0.097]} rotation={[-0.3, 0, 0]}>
+        <mesh position={[0, 0.1, 0.097]} rotation={[0.3, 0, 0]}>
           <planeGeometry args={[0.27, 0.17]} />
           <meshStandardMaterial color="#1a2a3a" roughness={0.1} />
         </mesh>
@@ -326,6 +331,61 @@ function Nightstand3D({ position, width = 0.4, depth = 0.4, height = 0.55 }) {
       <mesh position={[0, height * 0.25, depth / 2 + 0.02]}>
         <boxGeometry args={[0.06, 0.015, 0.015]} />
         <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+// =================== CABINET TABLE (small desk + cabinet like Image 2 right side) ===================
+function CabinetTable3D({ position, width = 0.4, depth = 1.3, height = 0.75 }) {
+  return (
+    <group position={position}>
+      {/* Cabinet body */}
+      <RoundedBox args={[width, height, depth]} position={[0, height / 2, 0]} radius={0.02} smoothness={4}>
+        <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
+      </RoundedBox>
+      {/* Countertop */}
+      <mesh position={[0, height + 0.01, 0]}>
+        <boxGeometry args={[width + 0.02, 0.02, depth + 0.02]} />
+        <meshStandardMaterial color="#e8e4dc" roughness={0.15} metalness={0.05} />
+      </mesh>
+      {/* Cabinet doors */}
+      {Array.from({ length: Math.max(1, Math.round(depth / 0.5)) }, (_, i) => {
+        const n = Math.max(1, Math.round(depth / 0.5));
+        const dz = -depth / 2 + (i + 0.5) * (depth / n);
+        return (
+          <group key={i}>
+            <mesh position={[width / 2 + 0.005, height / 2, dz]}>
+              <boxGeometry args={[0.01, height - 0.08, depth / n - 0.04]} />
+              <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
+            </mesh>
+            <mesh position={[width / 2 + 0.02, height / 2, dz]}>
+              <boxGeometry args={[0.015, 0.05, 0.015]} />
+              <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+            </mesh>
+          </group>
+        );
+      })}
+      {/* Small table lamp */}
+      <group position={[0, height + 0.02, -depth * 0.3]}>
+        <mesh position={[0, 0.05, 0]}>
+          <cylinderGeometry args={[0.03, 0.04, 0.1, 8]} />
+          <meshStandardMaterial color={PALETTE.metal} metalness={0.4} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.14, 0]}>
+          <cylinderGeometry args={[0.06, 0.04, 0.08, 8]} />
+          <meshStandardMaterial color="#fff8ee" roughness={0.3} transparent opacity={0.9} />
+        </mesh>
+        <pointLight position={[0, 0.2, 0]} intensity={0.15} color="#fff5e0" distance={1.5} />
+      </group>
+      {/* Decorative items */}
+      <mesh position={[0.05, height + 0.04, depth * 0.2]}>
+        <cylinderGeometry args={[0.025, 0.02, 0.06, 8]} />
+        <meshStandardMaterial color="#e0d0c0" roughness={0.4} />
+      </mesh>
+      <mesh position={[-0.05, height + 0.05, depth * 0.1]}>
+        <boxGeometry args={[0.08, 0.08, 0.06]} />
+        <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
       </mesh>
     </group>
   );
@@ -596,56 +656,95 @@ function Toilet3D({ position, width = 0.4, depth = 0.6 }) {
   );
 }
 
-// =================== SINK WITH FAUCET ===================
-function Sink3D({ position, width = 0.5, depth = 0.4 }) {
+// =================== SINK WITH CABINET + MIRROR ===================
+function Sink3D({ position, width = 0.5, depth = 0.4, sinkMode = 'single' }) {
+  const isDouble = sinkMode === 'double';
+  const cabinetH = 0.65;
   return (
     <group position={position}>
-      {/* Pedestal */}
-      <mesh position={[0, 0.35, 0]}>
-        <cylinderGeometry args={[0.06, 0.08, 0.7, 8]} />
-        <meshStandardMaterial color="white" roughness={0.2} />
-      </mesh>
-      {/* Basin */}
-      <RoundedBox args={[width, 0.08, depth]} position={[0, 0.72, 0]} radius={0.03} smoothness={4}>
-        <meshStandardMaterial color="white" roughness={0.15} />
+      {/* Vanity cabinet */}
+      <RoundedBox args={[width, cabinetH, depth]} position={[0, cabinetH / 2, 0]} radius={0.02} smoothness={4}>
+        <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
       </RoundedBox>
-      {/* Inner basin (concave illusion) */}
-      <mesh position={[0, 0.73, 0]}>
-        <cylinderGeometry args={[width * 0.3, width * 0.35, 0.06, 16]} />
-        <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
+      {/* Cabinet door(s) */}
+      {isDouble ? (
+        <>
+          <mesh position={[-width * 0.25, cabinetH / 2, depth / 2 + 0.005]}>
+            <boxGeometry args={[width * 0.45, cabinetH - 0.08, 0.01]} />
+            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
+          </mesh>
+          <mesh position={[width * 0.25, cabinetH / 2, depth / 2 + 0.005]}>
+            <boxGeometry args={[width * 0.45, cabinetH - 0.08, 0.01]} />
+            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
+          </mesh>
+          <mesh position={[-width * 0.25, cabinetH / 2, depth / 2 + 0.02]}>
+            <boxGeometry args={[0.05, 0.015, 0.015]} />
+            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+          </mesh>
+          <mesh position={[width * 0.25, cabinetH / 2, depth / 2 + 0.02]}>
+            <boxGeometry args={[0.05, 0.015, 0.015]} />
+            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh position={[0, cabinetH / 2, depth / 2 + 0.005]}>
+            <boxGeometry args={[width - 0.06, cabinetH - 0.08, 0.01]} />
+            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, cabinetH / 2, depth / 2 + 0.02]}>
+            <boxGeometry args={[0.05, 0.015, 0.015]} />
+            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+          </mesh>
+        </>
+      )}
+      {/* Countertop */}
+      <mesh position={[0, cabinetH + 0.015, 0]}>
+        <boxGeometry args={[width + 0.02, 0.03, depth + 0.02]} />
+        <meshStandardMaterial color="#e8e4dc" roughness={0.15} metalness={0.05} />
       </mesh>
-      {/* Faucet base */}
-      <mesh position={[0, 0.78, -depth * 0.35]}>
-        <cylinderGeometry args={[0.015, 0.02, 0.1, 8]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
-      </mesh>
-      {/* Faucet spout */}
-      <mesh position={[0, 0.85, -depth * 0.2]} rotation={[0.4, 0, 0]}>
-        <cylinderGeometry args={[0.01, 0.012, 0.18, 8]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
-      </mesh>
-      {/* Faucet head */}
-      <mesh position={[0, 0.87, -depth * 0.08]}>
-        <sphereGeometry args={[0.018, 8, 8]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
-      </mesh>
-      {/* Handle left */}
-      <mesh position={[-0.06, 0.8, -depth * 0.35]}>
-        <boxGeometry args={[0.03, 0.015, 0.015]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.6} roughness={0.15} />
-      </mesh>
-      {/* Handle right */}
-      <mesh position={[0.06, 0.8, -depth * 0.35]}>
-        <boxGeometry args={[0.03, 0.015, 0.015]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.6} roughness={0.15} />
-      </mesh>
-      {/* Mirror above */}
-      <mesh position={[0, 1.3, -depth / 2 + 0.02]}>
-        <boxGeometry args={[width * 0.9, 0.6, 0.02]} />
+      {/* Basin(s) */}
+      {isDouble ? (
+        <>
+          <mesh position={[-width * 0.25, cabinetH + 0.02, 0]}>
+            <cylinderGeometry args={[width * 0.18, width * 0.2, 0.05, 16]} />
+            <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
+          </mesh>
+          <mesh position={[width * 0.25, cabinetH + 0.02, 0]}>
+            <cylinderGeometry args={[width * 0.18, width * 0.2, 0.05, 16]} />
+            <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
+          </mesh>
+        </>
+      ) : (
+        <mesh position={[0, cabinetH + 0.02, 0]}>
+          <cylinderGeometry args={[width * 0.25, width * 0.3, 0.05, 16]} />
+          <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
+        </mesh>
+      )}
+      {/* Faucet(s) */}
+      {(isDouble ? [-width * 0.25, width * 0.25] : [0]).map((fx, fi) => (
+        <group key={fi} position={[fx, 0, 0]}>
+          <mesh position={[0, cabinetH + 0.08, -depth * 0.35]}>
+            <cylinderGeometry args={[0.012, 0.015, 0.08, 8]} />
+            <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
+          </mesh>
+          <mesh position={[0, cabinetH + 0.14, -depth * 0.2]} rotation={[0.4, 0, 0]}>
+            <cylinderGeometry args={[0.008, 0.01, 0.15, 8]} />
+            <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
+          </mesh>
+          <mesh position={[0, cabinetH + 0.16, -depth * 0.08]}>
+            <sphereGeometry args={[0.014, 8, 8]} />
+            <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
+          </mesh>
+        </group>
+      ))}
+      {/* Long mirror above */}
+      <mesh position={[0, 1.35, -depth / 2 + 0.02]}>
+        <boxGeometry args={[width * 1.2, 0.7, 0.02]} />
         <meshStandardMaterial color="#e0e8ec" metalness={0.5} roughness={0.1} />
       </mesh>
-      <mesh position={[0, 1.3, -depth / 2 + 0.01]}>
-        <boxGeometry args={[width * 0.95, 0.65, 0.01]} />
+      <mesh position={[0, 1.35, -depth / 2 + 0.01]}>
+        <boxGeometry args={[width * 1.25, 0.75, 0.01]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.4} roughness={0.2} />
       </mesh>
     </group>
@@ -933,16 +1032,43 @@ function OutdoorScenery({ windowPos, windowW, windowH }) {
   );
 }
 
-// =================== WINDOW WITH FRAME ===================
+// =================== WINDOW WITH FRAME (OPEN/CLOSE TOGGLE) ===================
 function WindowWithView({ position, width, height }) {
+  const leftPaneRef = useRef();
+  const rightPaneRef = useRef();
+  const [open, setOpen] = useState(false);
+  const targetAngle = open ? Math.PI / 3 : 0;
+
+  useFrame(() => {
+    [leftPaneRef, rightPaneRef].forEach((ref) => {
+      if (ref.current) {
+        const cur = ref.current.rotation.y;
+        const diff = targetAngle * (ref === leftPaneRef ? 1 : -1) - cur;
+        if (Math.abs(diff) > 0.005) {
+          ref.current.rotation.y += diff * 0.06;
+        }
+      }
+    });
+  });
+
+  const paneW = width / 2 - 0.03;
+  const glassMat = (
+    <meshPhysicalMaterial
+      color="#f0f5fa"
+      transparent
+      opacity={0.08}
+      roughness={0.02}
+      metalness={0.0}
+      transmission={0.95}
+      thickness={0.02}
+      ior={1.5}
+      envMapIntensity={0.3}
+    />
+  );
+
   return (
     <group position={position}>
-      {/* Window hole - glass */}
-      <mesh>
-        <boxGeometry args={[0.05, height, width]} />
-        <meshPhysicalMaterial color="#d8e8f0" transparent opacity={0.2} roughness={0.05} transmission={0.8} />
-      </mesh>
-      {/* Window frame */}
+      {/* Outer frame */}
       <mesh position={[0, height / 2, 0]}>
         <boxGeometry args={[0.07, 0.04, width + 0.08]} />
         <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
@@ -959,15 +1085,52 @@ function WindowWithView({ position, width, height }) {
         <boxGeometry args={[0.07, height + 0.08, 0.04]} />
         <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
       </mesh>
-      {/* Center cross */}
-      <mesh>
-        <boxGeometry args={[0.06, 0.03, width]} />
-        <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
-      </mesh>
+      {/* Center vertical divider */}
       <mesh>
         <boxGeometry args={[0.06, height, 0.03]} />
         <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
       </mesh>
+
+      {/* Left glass pane — hinged on left edge, click to open/close */}
+      <group position={[0, 0, -width / 4 - 0.015]} ref={leftPaneRef}
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+        <group position={[0, 0, -paneW / 2]}>
+          <mesh>
+            <boxGeometry args={[0.02, height - 0.06, paneW]} />
+            {glassMat}
+          </mesh>
+          {/* Pane frame */}
+          <mesh>
+            <boxGeometry args={[0.025, height - 0.04, paneW + 0.02]} />
+            <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} wireframe />
+          </mesh>
+          {/* Handle */}
+          <mesh position={[0.02, 0, paneW / 2 - 0.06]}>
+            <boxGeometry args={[0.02, 0.08, 0.015]} />
+            <meshStandardMaterial color={PALETTE.metal} metalness={0.6} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+
+      {/* Right glass pane — hinged on right edge */}
+      <group position={[0, 0, width / 4 + 0.015]} ref={rightPaneRef}
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}>
+        <group position={[0, 0, paneW / 2]}>
+          <mesh>
+            <boxGeometry args={[0.02, height - 0.06, paneW]} />
+            {glassMat}
+          </mesh>
+          <mesh>
+            <boxGeometry args={[0.025, height - 0.04, paneW + 0.02]} />
+            <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} wireframe />
+          </mesh>
+          <mesh position={[0.02, 0, -paneW / 2 + 0.06]}>
+            <boxGeometry args={[0.02, 0.08, 0.015]} />
+            <meshStandardMaterial color={PALETTE.metal} metalness={0.6} roughness={0.2} />
+          </mesh>
+        </group>
+      </group>
+
       {/* Window sill */}
       <mesh position={[0.06, -height / 2 - 0.02, 0]}>
         <boxGeometry args={[0.15, 0.04, width + 0.15]} />
@@ -1047,6 +1210,7 @@ const TYPE_TO_COMPONENT = {
   vanity: VanityDesk,
   chair: Chair3D,
   nightstand: Nightstand3D,
+  cabinetTable: CabinetTable3D,
 };
 
 // =================== MAIN 3D VIEW ===================
@@ -1091,7 +1255,7 @@ export default function RoomView3D({ furniture, onBack }) {
         <div>
           <h2 className="text-lg font-semibold text-[#4a3f35]">Bedroom 2 — 3D View</h2>
           <p className="text-sm text-[#8a7d72]">
-            Neoclassical cream style • Orbit to explore • Scroll to zoom • Click doors to open
+            Neoclassical cream style • Orbit to explore • Scroll to zoom • Click doors/window to open
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1146,7 +1310,7 @@ export default function RoomView3D({ furniture, onBack }) {
               width={ROOM_W}
               height={ROOM_H}
               hasHole
-              holeX={-(bottomDoor.x + bottomDoor.width / 2 - ROOM_W / 2)}
+              holeX={-(bottomDoor.x + bottomDoor.width - ROOM_W / 2)}
               holeW={bottomDoor.width}
               holeH={2.1}
               holeY0={0}
@@ -1163,7 +1327,7 @@ export default function RoomView3D({ furniture, onBack }) {
               width={ROOM_D}
               height={ROOM_H}
               hasHole
-              holeX={-(leftDoor.y + leftDoor.height / 2 - ROOM_D / 2)}
+              holeX={leftDoor.y - ROOM_D / 2}
               holeW={leftDoor.height}
               holeH={2.1}
               holeY0={0}
@@ -1180,7 +1344,7 @@ export default function RoomView3D({ furniture, onBack }) {
               width={ROOM_D}
               height={ROOM_H}
               hasHole
-              holeX={-(windowItem.y + windowItem.height / 2 - ROOM_D / 2)}
+              holeX={-(windowItem.y + windowItem.height - ROOM_D / 2)}
               holeW={windowItem.height}
               holeH={1.5}
               holeY0={0.5}
@@ -1246,9 +1410,11 @@ export default function RoomView3D({ furniture, onBack }) {
           {furnitureItems.map((item) => {
             const Component = TYPE_TO_COMPONENT[item.type];
             if (!Component) return null;
+            const extraProps = {};
+            if (item.type === 'sink') extraProps.sinkMode = item.sinkMode || 'single';
             return (
               <group key={item.id} position={item.pos3d} rotation={[0, item.rot3d, 0]}>
-                <Component position={[0, 0, 0]} width={item.width} depth={item.height} />
+                <Component position={[0, 0, 0]} width={item.width} depth={item.height} {...extraProps} />
               </group>
             );
           })}

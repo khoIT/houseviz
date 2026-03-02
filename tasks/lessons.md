@@ -37,7 +37,10 @@
 - Exclude structural types (door, window, wcDoor, zone) from duplication.
 - Type-based rendering means duplicates automatically render in 3D.
 
-## Wall Door Holes
-- Each wall direction (left, right, front, back) needs its own hole calculation.
-- For left wall (rotation π/2): `holeX = -(doorY_center - ROOM_D/2)`, `holeW = doorHeight`.
+## Wall Door/Window Holes
+- `WallPanel` `holeX` must be the LEFT EDGE of the hole in wall-local coordinates, NOT the center.
+- For right wall (rotation -π/2): `local_x = -world_z` → `holeX = -(item.y + item.height - ROOM_D/2)`.
+- For left wall (rotation +π/2): `local_x = +world_z` → `holeX = item.y - ROOM_D/2`.
+- For front wall (rotation π): `local_x = -world_x` → `holeX = -(item.x + item.width - ROOM_W/2)`.
+- Always clamp hole bounds to wall width to prevent overflow: `Math.max(-width/2, holeX)` / `Math.min(width/2, holeX+holeW)`.
 - Find doors by `wallMounted` property, not by ID, to support multiple doors on different walls.
