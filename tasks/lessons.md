@@ -37,6 +37,16 @@
 - Exclude structural types (door, window, wcDoor, zone) from duplication.
 - Type-based rendering means duplicates automatically render in 3D.
 
+## 3D Component Orientation Convention
+- Components with a "long" and "short" dimension: basins/items should be arranged along the LONG axis, not the short one.
+- For wall-mounted items (sink, shower), identify which wall the item is pushed against in 2D, then orient mirror/plumbing on that wall side (-x or -z).
+- Shower glass walls should face the bathroom INTERIOR (where user walks in), not the room walls.
+- When `width` (x) is short and `depth` (z) is long, arrange sub-elements along z-axis.
+
+## 2D Drag Bounds with Rotation
+- When items are rotated, the axis-aligned bounding box (AABB) changes. Use `effW = w*|cos(θ)| + h*|sin(θ)|` for clamping.
+- Without this, a 3m×0.6m wardrobe rotated 90° can't reach the rightmost wall because constraints still use the original 3m width.
+
 ## Wall Door/Window Holes
 - `WallPanel` `holeX` must be the LEFT EDGE of the hole in wall-local coordinates, NOT the center.
 - For right wall (rotation -π/2): `local_x = -world_z` → `holeX = -(item.y + item.height - ROOM_D/2)`.

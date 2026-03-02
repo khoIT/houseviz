@@ -1,10 +1,32 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import FloorPlanEditor, { INITIAL_FURNITURE } from './components/FloorPlanEditor';
 import RoomView3D from './components/RoomView3D';
 
+const STORAGE_KEY = 'house-viz-furniture';
+
+function loadSavedFurniture() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch { /* ignore corrupt data */ }
+  return INITIAL_FURNITURE;
+}
+
 function App() {
-  const [furniture, setFurniture] = useState(INITIAL_FURNITURE);
+  const [furniture, setFurniture] = useState(loadSavedFurniture);
   const [view, setView] = useState('2d'); // '2d' or '3d'
+
+  const saveFurniture = useCallback(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(furniture));
+  }, [furniture]);
+
+  const resetFurniture = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setFurniture(INITIAL_FURNITURE);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-[#f5f0eb]">
@@ -51,6 +73,8 @@ function App() {
             furniture={furniture}
             setFurniture={setFurniture}
             onGenerate={() => setView('3d')}
+            onSave={saveFurniture}
+            onReset={resetFurniture}
           />
         ) : (
           <RoomView3D

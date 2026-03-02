@@ -230,8 +230,8 @@ function WorkStation3D({ position, width = 0.6, depth = 2, height = 0.75 }) {
           <meshStandardMaterial color={PALETTE.furnitureDark} roughness={0.5} />
         </mesh>
       ))}
-      {/* Monitor + stand */}
-      <group position={[0, height, -depth * 0.3]}>
+      {/* Monitor + stand — rotated 90° left to face bed (+x) */}
+      <group position={[0, height, -depth * 0.3]} rotation={[0, -Math.PI / 2, 0]}>
         <mesh position={[0, 0.25, 0]}>
           <boxGeometry args={[0.5, 0.3, 0.02]} />
           <meshStandardMaterial color="#222" roughness={0.3} />
@@ -249,22 +249,22 @@ function WorkStation3D({ position, width = 0.6, depth = 2, height = 0.75 }) {
           <meshStandardMaterial color={PALETTE.metal} metalness={0.4} roughness={0.3} />
         </mesh>
       </group>
-      {/* Keyboard */}
-      <mesh position={[0, height + 0.02, -depth * 0.15]}>
+      {/* Keyboard — rotated to match monitor */}
+      <mesh position={[width * 0.15, height + 0.02, -depth * 0.3]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[0.35, 0.01, 0.12]} />
         <meshStandardMaterial color="#333" roughness={0.5} />
       </mesh>
       {/* Mouse */}
-      <mesh position={[0.22, height + 0.02, -depth * 0.15]}>
+      <mesh position={[width * 0.15, height + 0.02, -depth * 0.1]} rotation={[0, -Math.PI / 2, 0]}>
         <boxGeometry args={[0.05, 0.015, 0.08]} />
         <meshStandardMaterial color="#333" roughness={0.5} />
       </mesh>
       {/* PC tower under desk */}
-      <RoundedBox args={[0.18, 0.4, 0.4]} position={[-width/2 + 0.12, 0.2, -depth * 0.3]} radius={0.01} smoothness={2}>
+      <RoundedBox args={[0.18, 0.4, 0.4]} position={[-width/2 + 0.12, 0.2, -depth * 0.35]} radius={0.01} smoothness={2}>
         <meshStandardMaterial color="#2a2a2a" roughness={0.4} />
       </RoundedBox>
-      {/* Laptop next to monitor, also back to wall, screen faces out */}
-      <group position={[width * 0.25, height, -depth * 0.15]}>
+      {/* Laptop — rotated 90° left to face bed (+x) */}
+      <group position={[0, height, depth * 0.15]} rotation={[0, -Math.PI / 2, 0]}>
         <mesh position={[0, 0.01, 0]}>
           <boxGeometry args={[0.3, 0.01, 0.22]} />
           <meshStandardMaterial color="#555" roughness={0.3} />
@@ -657,94 +657,71 @@ function Toilet3D({ position, width = 0.4, depth = 0.6 }) {
 }
 
 // =================== SINK WITH CABINET + MIRROR ===================
+// width = narrow dim (x, depth from wall), depth = long dim (z, counter length)
+// Mirror on -x wall (wall side), basins along z, user faces from +x
 function Sink3D({ position, width = 0.5, depth = 0.4, sinkMode = 'single' }) {
   const isDouble = sinkMode === 'double';
   const cabinetH = 0.65;
+  const basinR = Math.min(0.14, depth * 0.1);
+  const basinPositions = isDouble ? [-depth * 0.25, depth * 0.25] : [0];
   return (
     <group position={position}>
       {/* Vanity cabinet */}
       <RoundedBox args={[width, cabinetH, depth]} position={[0, cabinetH / 2, 0]} radius={0.02} smoothness={4}>
         <meshStandardMaterial color={PALETTE.furniture} roughness={0.5} />
       </RoundedBox>
-      {/* Cabinet door(s) */}
-      {isDouble ? (
-        <>
-          <mesh position={[-width * 0.25, cabinetH / 2, depth / 2 + 0.005]}>
-            <boxGeometry args={[width * 0.45, cabinetH - 0.08, 0.01]} />
-            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
-          </mesh>
-          <mesh position={[width * 0.25, cabinetH / 2, depth / 2 + 0.005]}>
-            <boxGeometry args={[width * 0.45, cabinetH - 0.08, 0.01]} />
-            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
-          </mesh>
-          <mesh position={[-width * 0.25, cabinetH / 2, depth / 2 + 0.02]}>
-            <boxGeometry args={[0.05, 0.015, 0.015]} />
-            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
-          </mesh>
-          <mesh position={[width * 0.25, cabinetH / 2, depth / 2 + 0.02]}>
-            <boxGeometry args={[0.05, 0.015, 0.015]} />
-            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
-          </mesh>
-        </>
-      ) : (
-        <>
-          <mesh position={[0, cabinetH / 2, depth / 2 + 0.005]}>
-            <boxGeometry args={[width - 0.06, cabinetH - 0.08, 0.01]} />
-            <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
-          </mesh>
-          <mesh position={[0, cabinetH / 2, depth / 2 + 0.02]}>
-            <boxGeometry args={[0.05, 0.015, 0.015]} />
-            <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
-          </mesh>
-        </>
-      )}
+      {/* Cabinet doors on +x face (facing user) */}
+      {basinPositions.map((dz, i) => {
+        const doorH = isDouble ? depth * 0.42 : depth * 0.85;
+        return (
+          <group key={`door-${i}`}>
+            <mesh position={[width / 2 + 0.005, cabinetH / 2, dz]}>
+              <boxGeometry args={[0.01, cabinetH - 0.08, doorH]} />
+              <meshStandardMaterial color={PALETTE.wallAccent} roughness={0.6} />
+            </mesh>
+            <mesh position={[width / 2 + 0.02, cabinetH / 2, dz]}>
+              <boxGeometry args={[0.015, 0.05, 0.015]} />
+              <meshStandardMaterial color={PALETTE.metal} metalness={0.5} roughness={0.3} />
+            </mesh>
+          </group>
+        );
+      })}
       {/* Countertop */}
       <mesh position={[0, cabinetH + 0.015, 0]}>
         <boxGeometry args={[width + 0.02, 0.03, depth + 0.02]} />
         <meshStandardMaterial color="#e8e4dc" roughness={0.15} metalness={0.05} />
       </mesh>
-      {/* Basin(s) */}
-      {isDouble ? (
-        <>
-          <mesh position={[-width * 0.25, cabinetH + 0.02, 0]}>
-            <cylinderGeometry args={[width * 0.18, width * 0.2, 0.05, 16]} />
-            <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
-          </mesh>
-          <mesh position={[width * 0.25, cabinetH + 0.02, 0]}>
-            <cylinderGeometry args={[width * 0.18, width * 0.2, 0.05, 16]} />
-            <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
-          </mesh>
-        </>
-      ) : (
-        <mesh position={[0, cabinetH + 0.02, 0]}>
-          <cylinderGeometry args={[width * 0.25, width * 0.3, 0.05, 16]} />
+      {/* Basins — arranged along z (the long axis) */}
+      {basinPositions.map((dz, i) => (
+        <mesh key={`basin-${i}`} position={[0, cabinetH + 0.02, dz]}>
+          <cylinderGeometry args={[basinR, basinR * 1.1, 0.05, 16]} />
           <meshStandardMaterial color="#e8f0f5" roughness={0.1} />
         </mesh>
-      )}
-      {/* Faucet(s) */}
-      {(isDouble ? [-width * 0.25, width * 0.25] : [0]).map((fx, fi) => (
-        <group key={fi} position={[fx, 0, 0]}>
-          <mesh position={[0, cabinetH + 0.08, -depth * 0.35]}>
+      ))}
+      {/* Faucets — on -x side (wall side), behind basins */}
+      {basinPositions.map((dz, i) => (
+        <group key={`faucet-${i}`} position={[0, 0, dz]}>
+          <mesh position={[-width * 0.35, cabinetH + 0.08, 0]}>
             <cylinderGeometry args={[0.012, 0.015, 0.08, 8]} />
             <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
           </mesh>
-          <mesh position={[0, cabinetH + 0.14, -depth * 0.2]} rotation={[0.4, 0, 0]}>
+          <mesh position={[-width * 0.2, cabinetH + 0.14, 0]} rotation={[0, 0, -0.4]}>
             <cylinderGeometry args={[0.008, 0.01, 0.15, 8]} />
             <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
           </mesh>
-          <mesh position={[0, cabinetH + 0.16, -depth * 0.08]}>
+          <mesh position={[-width * 0.08, cabinetH + 0.16, 0]}>
             <sphereGeometry args={[0.014, 8, 8]} />
             <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
           </mesh>
         </group>
       ))}
-      {/* Long mirror above */}
-      <mesh position={[0, 1.35, -depth / 2 + 0.02]}>
-        <boxGeometry args={[width * 1.2, 0.7, 0.02]} />
+      {/* Long mirror on -x wall, spanning the full counter length */}
+      <mesh position={[-width / 2 + 0.015, 1.35, 0]}>
+        <boxGeometry args={[0.02, 0.7, depth * 0.85]} />
         <meshStandardMaterial color="#e0e8ec" metalness={0.5} roughness={0.1} />
       </mesh>
-      <mesh position={[0, 1.35, -depth / 2 + 0.01]}>
-        <boxGeometry args={[width * 1.25, 0.75, 0.01]} />
+      <mesh position={[-width / 2 + 0.005, 1.35, 0]}>
+        <boxGeometry args={[0.01, 0.75, depth * 0.9]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.4} roughness={0.2} />
       </mesh>
     </group>
@@ -752,21 +729,28 @@ function Sink3D({ position, width = 0.5, depth = 0.4, sinkMode = 'single' }) {
 }
 
 // =================== SHOWER (KHUNG TẮM ĐỨNG) ===================
+// Glass on +x and +z (facing bathroom interior). -x = room wall, -z = back wall.
+// Shower head wall-mounted on -x wall, centered along z.
 function Shower3D({ position, width = 0.9, depth = 0.8 }) {
   return (
     <group position={position}>
-      {/* Glass walls */}
+      {/* Glass wall — right side (+x), facing bathroom */}
       <mesh position={[width / 2 - 0.005, ROOM_H * 0.38, 0]}>
         <boxGeometry args={[0.01, ROOM_H * 0.75, depth]} />
         <meshPhysicalMaterial color={PALETTE.glass} transparent opacity={0.15} roughness={0.05} transmission={0.7} />
       </mesh>
+      {/* Glass wall — front side (+z), facing WC door */}
       <mesh position={[0, ROOM_H * 0.38, depth / 2 - 0.005]}>
         <boxGeometry args={[width, ROOM_H * 0.75, 0.01]} />
         <meshPhysicalMaterial color={PALETTE.glass} transparent opacity={0.15} roughness={0.05} transmission={0.7} />
       </mesh>
-      {/* Glass door frame */}
+      {/* Glass door frames (wireframe) */}
       <mesh position={[width / 2 - 0.005, ROOM_H * 0.38, 0]}>
         <boxGeometry args={[0.02, ROOM_H * 0.75, depth]} />
+        <meshStandardMaterial color={PALETTE.chrome} metalness={0.5} roughness={0.2} wireframe />
+      </mesh>
+      <mesh position={[0, ROOM_H * 0.38, depth / 2 - 0.005]}>
+        <boxGeometry args={[width, ROOM_H * 0.75, 0.02]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.5} roughness={0.2} wireframe />
       </mesh>
       {/* Shower tray */}
@@ -779,39 +763,39 @@ function Shower3D({ position, width = 0.9, depth = 0.8 }) {
         <circleGeometry args={[0.04, 12]} />
         <meshStandardMaterial color="#bbb" metalness={0.5} roughness={0.3} />
       </mesh>
-      {/* Shower arm (wall mount) */}
-      <mesh position={[-width / 2 + 0.05, 2.0, -depth / 2 + 0.08]}>
-        <cylinderGeometry args={[0.012, 0.012, 0.25, 8]} />
-        <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
-      </mesh>
-      {/* Shower arm horizontal */}
-      <mesh position={[-width / 2 + 0.05, 2.12, -depth / 2 + 0.2]} rotation={[Math.PI / 2, 0, 0]}>
+      {/* Shower arm — wall-mounted on -x wall, centered along z */}
+      <mesh position={[-width / 2 + 0.05, 2.05, 0]}>
         <cylinderGeometry args={[0.012, 0.012, 0.2, 8]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
       </mesh>
-      {/* Shower head (vòi sen) */}
-      <mesh position={[-width / 2 + 0.05, 2.12, -depth / 2 + 0.32]}>
-        <cylinderGeometry args={[0.06, 0.04, 0.02, 16]} />
+      {/* Shower arm horizontal — extends from -x wall toward center */}
+      <mesh position={[-width / 2 + 0.2, 2.15, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.012, 0.012, 0.25, 8]} />
+        <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
+      </mesh>
+      {/* Shower head — wall-mounted, centered */}
+      <mesh position={[-width / 2 + 0.35, 2.15, 0]} rotation={[0, 0, Math.PI / 6]}>
+        <cylinderGeometry args={[0.07, 0.05, 0.02, 16]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
       </mesh>
       {/* Shower head holes */}
-      {Array.from({ length: 5 }, (_, i) => (
-        <mesh key={i} position={[-width / 2 + 0.05 + (i - 2) * 0.02, 2.11, -depth / 2 + 0.32]}>
+      {Array.from({ length: 7 }, (_, i) => (
+        <mesh key={i} position={[-width / 2 + 0.35 + (i % 3 - 1) * 0.025, 2.14, (Math.floor(i / 3) - 1) * 0.025]}>
           <sphereGeometry args={[0.004, 6, 6]} />
           <meshStandardMaterial color="#999" roughness={0.3} />
         </mesh>
       ))}
-      {/* Mixer valve */}
-      <mesh position={[-width / 2 + 0.05, 1.2, -depth / 2 + 0.06]}>
+      {/* Mixer valve on -x wall */}
+      <mesh position={[-width / 2 + 0.05, 1.2, 0]}>
         <cylinderGeometry args={[0.03, 0.03, 0.04, 12]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.7} roughness={0.1} />
       </mesh>
-      <mesh position={[-width / 2 + 0.05, 1.2, -depth / 2 + 0.1]}>
+      <mesh position={[-width / 2 + 0.05, 1.2, 0.05]}>
         <boxGeometry args={[0.06, 0.015, 0.015]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.6} roughness={0.15} />
       </mesh>
-      {/* Handheld shower holder */}
-      <mesh position={[-width / 2 + 0.05, 1.5, -depth / 2 + 0.06]}>
+      {/* Handheld shower holder on -x wall */}
+      <mesh position={[-width / 2 + 0.05, 1.5, 0]}>
         <cylinderGeometry args={[0.015, 0.015, 0.5, 8]} />
         <meshStandardMaterial color={PALETTE.chrome} metalness={0.6} roughness={0.15} />
       </mesh>

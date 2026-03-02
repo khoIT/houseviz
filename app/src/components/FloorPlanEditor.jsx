@@ -28,9 +28,8 @@ const INITIAL_FURNITURE = [
   { id: 'wcZone', type: 'zone', label: 'WC Zone', x: 0, y: 0, width: 2, height: 2, color: COLORS.wcWall, isZone: true, rotation: 0 },
   // WC sub-elements
   { id: 'toilet', type: 'toilet', label: 'Bồn cầu', x: 1.2, y: 0, width: 0.4, height: 0.6, color: COLORS.toilet, zone: 'wc', rotation: 0 },
-  { id: 'sink', type: 'sink', label: 'Sink', x: 0.75, y: 0.6, width: 0.5, height: 0.4, color: COLORS.sink, zone: 'wc', sinkMode: 'single', rotation: 0 },
-  { id: 'sink2', type: 'sink', label: 'Sink', x: 0.75, y: 1.2, width: 0.5, height: 0.4, color: COLORS.sink, zone: 'wc', sinkMode: 'single', rotation: 0 },
-  { id: 'shower', type: 'shower', label: 'Shower', x: 0, y: 0.4, width: 0.9, height: 1.2, color: COLORS.shower, zone: 'wc', rotation: 180 },
+  { id: 'sink', type: 'sink', label: 'Double Sink', x: 0.5, y: 0.3, width: 0.5, height: 1.4, color: COLORS.sink, zone: 'wc', sinkMode: 'double', rotation: 0 },
+  { id: 'shower', type: 'shower', label: 'Shower', x: 0, y: 0.4, width: 0.9, height: 1.2, color: COLORS.shower, zone: 'wc', rotation: 0 },
   // Bedroom furniture
   { id: 'bed', type: 'bed', label: 'Bed S1', x: 3.3, y: 0, width: 2, height: 1.8, color: COLORS.bed, rotation: 0 },
   { id: 'workDesk', type: 'workStation', label: 'Work Station', x: 2.05, y: 0, width: 0.6, height: 2.0, color: COLORS.desk, rotation: 0 },
@@ -145,7 +144,7 @@ function renderItemIcon(item, px, py, pw, ph) {
   }
 }
 
-export default function FloorPlanEditor({ furniture, setFurniture, onGenerate }) {
+export default function FloorPlanEditor({ furniture, setFurniture, onGenerate, onSave, onReset }) {
   const svgRef = useRef(null);
   const [interaction, setInteraction] = useState(null); // { type: 'drag'|'resize', id, edge?, offsetX?, offsetY? }
   const [selectedId, setSelectedId] = useState(null);
@@ -192,10 +191,17 @@ export default function FloorPlanEditor({ furniture, setFurniture, onGenerate })
         if (interaction.type === 'drag') {
           let cx = toMeter(svgP.x - interaction.offsetX - padX);
           let cy = toMeter(svgP.y - interaction.offsetY - padY);
+          // Compute axis-aligned bounding box for rotated item
+          const rot = (item.rotation || 0) * Math.PI / 180;
+          const cosR = Math.abs(Math.cos(rot));
+          const sinR = Math.abs(Math.sin(rot));
+          const effW = item.width * cosR + item.height * sinR;
+          const effH = item.width * sinR + item.height * cosR;
+          // Clamp center so rotated AABB stays inside room
+          cx = Math.max(effW / 2, Math.min(ROOM_WIDTH - effW / 2, cx));
+          cy = Math.max(effH / 2, Math.min(ROOM_HEIGHT - effH / 2, cy));
           let newX = snap(cx - item.width / 2);
           let newY = snap(cy - item.height / 2);
-          newX = Math.max(0, Math.min(ROOM_WIDTH - item.width, newX));
-          newY = Math.max(0, Math.min(ROOM_HEIGHT - item.height, newY));
           return { ...item, x: newX, y: newY };
         }
 
@@ -261,6 +267,13 @@ export default function FloorPlanEditor({ furniture, setFurniture, onGenerate })
       };
       return [...prev, clone];
     });
+  };
+
+  const deleteItem = (id) => {
+    const item = furniture.find((f) => f.id === id);
+    if (!item || item.isZone || ['zone'].includes(item.type)) return;
+    setFurniture((prev) => prev.filter((f) => f.id !== id));
+    setSelectedId(null);
   };
 
   // Grid
@@ -453,6 +466,13 @@ export default function FloorPlanEditor({ furniture, setFurniture, onGenerate })
                 ⊕ Duplicate
               </button>
             )}
+            {!selectedItem.isZone && !['zone'].includes(selectedItem.type) && (
+              <button onClick={() => deleteItem(selectedId)}
+                className="px-3 py-1 text-sm bg-[#fce8e8] hover:bg-[#f5cccc] text-[#a04040] rounded-md border border-[#e0a0a0] transition cursor-pointer"
+                title="Delete item">
+                ✕ Delete
+              </button>
+            )}
             <span className="text-xs text-[#8a7d72] ml-2">
               Pos: ({selectedItem.x}, {selectedItem.y})m  Size: {selectedItem.width}×{selectedItem.height}m  Rot: {selectedItem.rotation || 0}°
             </span>
@@ -460,6 +480,22 @@ export default function FloorPlanEditor({ furniture, setFurniture, onGenerate })
         ) : (
           <span className="text-sm text-[#b0a599]">Click a furniture item to select</span>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          {onSave && (
+            <button onClick={onSave}
+              className="px-3 py-1.5 text-sm font-medium bg-[#8B7355] hover:bg-[#7a6348] text-white rounded-md shadow-sm transition cursor-pointer"
+              title="Save layout to browser">
+              💾 Save
+            </button>
+          )}
+          {onReset && (
+            <button onClick={onReset}
+              className="px-3 py-1.5 text-sm font-medium bg-white hover:bg-[#fce8e8] text-[#8a7d72] rounded-md border border-[#d4c5b0] transition cursor-pointer"
+              title="Reset to default layout">
+              ↩ Reset
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

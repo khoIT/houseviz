@@ -65,6 +65,18 @@ Refer to the workflow.md for most effective working style.
 - [x] Window: two glass panes with open/close toggle animation (click to swing open like doors)
 - [x] Created netlify.toml (build cmd: npm run build, publish: dist, SPA redirect)
 
+### Prompt 7: Screen orientation, shower center, double sink, save/load, delete
+- [x] WorkStation3D: monitor + laptop rotated -π/2 around Y to face bed (+x)
+- [x] Shower3D: replaced corner wall-mount with centered ceiling-mount rain shower head
+- [x] Default double sink 1.4m long (single item replacing two separate sinks)
+- [x] Save/Load: localStorage persistence via App.jsx, Save + Reset buttons in 2D toolbar
+- [x] Delete: deleteItem function + ✕ Delete button in toolbar (excludes zones only)
+
+### Prompt 8: Sink/Shower orientation, 2D drag bounds
+- [x] Sink3D: basins arranged along z-axis (1.4m long dim), mirror on -x wall spanning full counter length, faucets on wall side, cabinet doors face +x toward user
+- [x] Shower3D: wall-mounted shower head on -x wall centered, glass on +x/+z facing bathroom interior, rotation changed from 180→0
+- [x] 2D drag bounds: compute rotated AABB so rotated wardrobe (3m×0.6m @90°) can reach rightmost wall
+
 ## Style Reference
 - Cream/beige walls with panel molding
 - Warm oak wood flooring
